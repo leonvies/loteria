@@ -46,17 +46,10 @@
       background: #334155;
       border-radius: 4px;
     }
-    .number-ball {
-      transition: all 0.2s ease-in-out;
-    }
-    .number-ball:hover {
-      transform: scale(1.1);
-    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
-  <!-- Header -->
   <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
       
@@ -89,6 +82,23 @@
         </button>
       </div>
 
+      <!-- Top Yellow Cota & PIX Card -->
+      <div class="flex items-center bg-slate-950/90 border border-amber-500/50 rounded-xl px-3.5 py-1.5 shadow-inner gap-3">
+        <div class="text-right">
+          <span class="text-[10px] text-amber-400/90 uppercase font-bold block leading-none">Cota / PIX</span>
+          <span id="headerCotaDisplay" class="text-amber-300 font-extrabold text-sm sm:text-base leading-tight">R$ 0,00 / cota</span>
+        </div>
+        <div class="flex items-center space-x-1">
+          <button onclick="copyPixKey()" title="Copiar Chave PIX" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <i class="fa-solid fa-qrcode text-xs"></i>
+            <span class="hidden md:inline">PIX</span>
+          </button>
+          <button id="editPixBtn" onclick="openEditPixModal()" title="Editar Dados PIX e Cota (Admin)" class="ml-1 text-slate-500 hover:text-amber-400 text-xs p-1 hidden transition">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+        </div>
+      </div>
+
       <!-- Admin / Access Toggle -->
       <div class="flex items-center space-x-1.5 sm:space-x-2">
         <button onclick="toggleAdminModal()" id="adminBtn" title="Modo de Acesso" class="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
@@ -105,7 +115,6 @@
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
     <!-- Lottery Tabs -->
@@ -274,9 +283,8 @@
 
   </main>
 
-  <!-- MODALS SECTION -->
 
-  <!-- Add / Edit Participant Modal (Admin Only) -->
+  <!-- Add / Edit Participant Modal -->
   <div id="participantModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -297,7 +305,6 @@
           <input type="text" id="participantNameInput" required placeholder="Ex: João Silva" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
         </div>
 
-        <!-- Lottery Selection and Cotas per Lottery -->
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1.5">Loterias que Participa e Nº de Cotas *</label>
           <div class="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
@@ -388,7 +395,7 @@
     </div>
   </div>
 
-  <!-- Add / Edit Game Modal (Admin Only) -->
+  <!-- Add / Edit Game Modal -->
   <div id="addGameModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -446,10 +453,9 @@
             <span id="pickerCountBadge" class="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800">0 selecionados</span>
           </div>
 
-          <!-- Interactive Clickable Number Grid -->
           <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 mb-3 space-y-2">
             <div class="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-slate-800/80">
-              <span class="text-[11px]">Clique nos números abaixo para marcar:</span>
+              <span class="text-[11px]">Clique nos números para marcar:</span>
               <div class="flex items-center gap-1.5">
                 <button type="button" onclick="randomizePicker()" class="text-[10px] text-amber-400 hover:text-amber-300 font-semibold px-2 py-0.5 rounded bg-amber-950/40 border border-amber-800/50 flex items-center gap-1 transition">
                   <i class="fa-solid fa-dice"></i> Surpresinha
@@ -460,13 +466,36 @@
               </div>
             </div>
             
-            <div id="numberPickerGrid" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 max-h-48 overflow-y-auto p-1 scrollbar-thin">
+            <div id="numberPickerGrid" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 max-h-48 overflow-y-auto p-1">
               <!-- Dynamically populated numbers -->
             </div>
           </div>
 
           <label class="block text-xs font-semibold text-slate-300 mb-1">Ou cole os números aqui:</label>
           <textarea id="gameNumbers" required rows="2" oninput="handleTextareaInput()" placeholder="Exemplo: 01 02 03 05 08 10 12 14 15 17 19 21 22 24 25" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+
+        <div class="pt-2 border-t border-slate-800 space-y-2">
+          <label class="block text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-camera"></i>
+            <span>Comprovante / Foto do Bilhete Real</span>
+          </label>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">URL da Imagem:</label>
+              <input type="url" id="gameTicketImageUrl" placeholder="https://exemplo.com/bilhete.jpg" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500" oninput="previewModalTicketImage(this.value)">
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Ou arquivo da galeria:</label>
+              <input type="file" id="gameTicketFileInput" accept="image/*" onchange="handleTicketFileUpload(event)" class="w-full text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer">
+            </div>
+          </div>
+
+          <div id="ticketImagePreviewContainer" class="hidden pt-2">
+            <span class="text-[10px] text-slate-400 block mb-1">Pré-visualização:</span>
+            <img id="ticketImagePreview" src="" alt="Bilhete Real" class="h-28 w-auto rounded-lg border border-slate-700 object-cover shadow-md">
+          </div>
         </div>
 
         <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
@@ -481,7 +510,7 @@
     </div>
   </div>
 
-  <!-- Edit Cash Balance Modal (Admin Only) -->
+  <!-- Edit Cash Balance Modal -->
   <div id="editBalanceModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -494,39 +523,140 @@
         </button>
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1">Valor do Caixa (R$):</label>
-        <input type="number" step="0.01" id="balanceInputValue" placeholder="0.00" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Novo Saldo do Caixa (R$):</label>
+          <input type="number" step="0.01" id="cashBalanceInput" placeholder="0.00" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+        </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2">
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
         <button onclick="closeModal('editBalanceModal')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">Cancelar</button>
         <button onclick="saveCashBalance()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-md transition">Salvar Saldo</button>
       </div>
     </div>
   </div>
 
-  <!-- Edit Prize Modal (Admin Only) -->
-  <div id="editPrizeModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+  <!-- Edit Prize Modal -->
+  <div id="prizeModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xs w-full p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <h3 class="text-base font-bold text-white flex items-center gap-2">
           <i class="fa-solid fa-trophy text-amber-400"></i>
           <span>Prêmio Estimado</span>
         </h3>
-        <button onclick="closeModal('editPrizeModal')" class="text-slate-400 hover:text-white text-lg">
+        <button onclick="closeModal('prizeModal')" class="text-slate-400 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold text-slate-300 mb-1">Valor Total do Prêmio (R$):</label>
-        <input type="number" step="0.01" id="prizeInputValue" placeholder="0.00" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-amber-300 font-bold focus:outline-none focus:border-amber-500">
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Prêmio Estimado (R$):</label>
+          <input type="number" step="0.01" min="0" id="estimatedPrizeInput" placeholder="1000000.00" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-amber-300 font-bold focus:outline-none focus:border-amber-500">
+        </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeModal('editPrizeModal')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">Cancelar</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeModal('prizeModal')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">Cancelar</button>
         <button onclick="saveEstimatedPrize()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-md transition">Salvar Prêmio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit PIX & Cota Modal -->
+  <div id="editPixModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-qrcode text-amber-400"></i>
+          <span>Dados do PIX e Valor da Cota</span>
+        </h3>
+        <button onclick="closeModal('editPixModal')" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Valor por Cota (R$):</label>
+          <input type="number" step="0.01" min="0" id="cotaPriceInput" placeholder="10.00" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-amber-300 font-bold focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Chave PIX:</label>
+          <input type="text" id="pixKeyInput" placeholder="Ex: 123.456.789-00 ou email@pix.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Nome do Recebedor:</label>
+          <input type="text" id="pixNameInput" placeholder="Ex: João da Silva - Banco Itaú" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button onclick="closeModal('editPixModal')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">Cancelar</button>
+        <button onclick="savePixInfo()" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-md transition">Salvar Dados PIX</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIX Copied Details Modal -->
+  <div id="pixDetailsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
+      <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto text-amber-400 text-2xl">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+
+      <div>
+        <h3 class="text-base font-bold text-white mb-1">Chave PIX Copiada!</h3>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Cole a chave no aplicativo do seu banco para colaborar com o bolão.
+        </p>
+      </div>
+
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-left space-y-2 text-xs">
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-500 block">Chave PIX Copiada:</span>
+          <span id="popupPixKeyDisplay" class="font-mono text-amber-300 font-bold select-all break-all">---</span>
+        </div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-500 block">Favorecido / Recebedor:</span>
+          <span id="popupPixNameDisplay" class="text-white font-semibold">---</span>
+        </div>
+        <div>
+          <span class="text-[10px] uppercase font-bold text-slate-500 block">Valor por Cota:</span>
+          <span id="popupCotaPriceDisplay" class="text-emerald-400 font-bold">R$ 0,00</span>
+        </div>
+      </div>
+
+      <button onclick="closeModal('pixDetailsModal')" class="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl shadow-md transition">
+        Entendido / Fechar
+      </button>
+    </div>
+  </div>
+
+  <!-- Fullscreen Ticket Image View Modal -->
+  <div id="viewTicketModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-4 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+        <h3 class="text-sm sm:text-base font-bold text-white flex items-center gap-2" id="viewTicketTitle">
+          <i class="fa-solid fa-ticket text-amber-400"></i>
+          <span>Comprovante do Bilhete Real</span>
+        </h3>
+        <button onclick="closeModal('viewTicketModal')" class="text-slate-400 hover:text-white text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="flex-grow overflow-auto flex items-center justify-center bg-slate-950 rounded-xl p-2 border border-slate-800 min-h-[250px]">
+        <img id="fullTicketImage" src="" alt="Comprovante do Bilhete" class="max-h-[65vh] w-auto max-w-full rounded-lg object-contain" onerror="this.onerror=null; this.src='https://placehold.co/600x400/0f172a/94a3b8?text=Imagem+Indisponivel';">
+      </div>
+
+      <div class="flex justify-end shrink-0 pt-2 border-t border-slate-800">
+        <button onclick="closeModal('viewTicketModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg">
+          Fechar
+        </button>
       </div>
     </div>
   </div>
@@ -545,7 +675,7 @@
       </div>
 
       <div id="adminLoginView" class="space-y-3">
-        <p class="text-xs text-slate-400">Digite a senha de Administrador para editar participantes ou gerenciar os jogos do bolão.</p>
+        <p class="text-xs text-slate-400">Digite a senha de Administrador para gerenciar o bolão.</p>
         <div>
           <label class="block text-xs font-semibold text-slate-300 mb-1">PIN Admin (Padrão: 1234)</label>
           <input type="password" id="adminPinInput" placeholder="Digite o PIN (1234)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500" onkeydown="if(event.key==='Enter') loginAdmin()">
@@ -562,7 +692,6 @@
           <span>Você está no <strong>Modo Administrador</strong>.</span>
         </div>
 
-        <!-- Section to Change Admin PIN directly in UI -->
         <div class="pt-2 border-t border-slate-800 space-y-2">
           <label class="block text-xs font-semibold text-slate-300">Alterar Senha / PIN Admin:</label>
           <div class="flex gap-2">
@@ -580,7 +709,7 @@
     </div>
   </div>
 
-  <!-- Backup/JSON Modal (Admin Only) -->
+  <!-- Backup/JSON Modal -->
   <div id="importExportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -625,16 +754,12 @@
     <span id="toastMessage" class="text-xs font-medium text-slate-200">Notificação</span>
   </div>
 
-  <!-- Firebase Cloud Sync & Main Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // =========================================================================
-    // CONFIGURAÇÃO DO FIREBASE
-    // Cole aqui os dados do seu projeto criado no Firebase Console
-    // =========================================================================
+    // Firebase Configuration
     const userFirebaseConfig = {
       apiKey: "AIzaSyCiCWZ_RqDRVKjKseDgRMzvfHoWOjNY4_Q",
       authDomain: "lotofacil-3f7d7.firebaseapp.com",
@@ -645,7 +770,6 @@
       appId: "1:983848442891:web:0221a5d8ac93d9efeebb0e"
     };
 
-    // Configuration for Supported Lotteries
     const LOTTERIES = {
       lotofacil: {
         name: 'Lotofácil',
@@ -715,13 +839,37 @@
       }
     }
 
-    // Application State
+    function parsePrizeValue(val) {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        const clean = val.replace(/[^\d.,]/g, '').trim();
+        if (clean.includes(',')) {
+          const parts = clean.split(',');
+          const intPart = parts[0].replace(/\./g, '');
+          const decPart = parts[1] || '00';
+          return parseFloat(`${intPart}.${decPart}`) || 0;
+        } else if (clean.includes('.')) {
+          const parts = clean.split('.');
+          if (parts[parts.length - 1].length === 2) {
+            const dec = parts.pop();
+            return parseFloat(`${parts.join('')}.${dec}`) || 0;
+          }
+          return parseFloat(clean.replace(/\./g, '')) || 0;
+        }
+        return parseFloat(clean) || 0;
+      }
+      return 0;
+    }
+
     let state = {
       currentLottery: 'lotofacil',
       isManualMode: false,
       isAdmin: false,
       adminPin: '1234',
       totalPoolBalance: 0.00,
+      cotaPrice: 0.00,
+      pixKey: '',
+      pixName: '',
       participants: [],
       drawData: {
         lotofacil: { contest: '---', date: '--/--/----', numbers: [], estimatedPrize: 0 },
@@ -734,100 +882,9 @@
 
     let selectedNumbersPicker = new Set();
     let participantToDeleteId = null;
-
-    // Cloud Database Variables
-    let db = null;
-    let auth = null;
+    let currentModalTicketImageData = '';
     let isCloudConnected = false;
-    let appId = 'bilhete-premiado-default';
-
-    // Cloud Initialization & Real-Time Sync
-    async function initCloudStorage() {
-      loadStoredData();
-      updateAdminUI();
-      updateBalanceDisplay();
-      switchLottery('lotofacil');
-
-      // Detect user config or fallback environment
-      let firebaseConfig = null;
-      if (userFirebaseConfig && userFirebaseConfig.apiKey && userFirebaseConfig.apiKey !== "COLE_SUA_API_KEY_AQUI") {
-        firebaseConfig = userFirebaseConfig;
-      } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-        try {
-          firebaseConfig = JSON.parse(__firebase_config);
-        } catch(e) {}
-      }
-
-      if (firebaseConfig) {
-        try {
-          appId = firebaseConfig.projectId || (typeof __app_id !== 'undefined' ? __app_id : 'bilhete-premiado-default');
-
-          const app = initializeApp(firebaseConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
-
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-
-          isCloudConnected = true;
-          updateCloudStatusBadge(true);
-
-          // Realtime Listener for Bolão State across all devices
-          const stateDocRef = doc(db, 'bolao_dados', 'mainState');
-          
-          onSnapshot(stateDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-              const cloudData = docSnap.data();
-              if (cloudData.bets) state.bets = cloudData.bets;
-              if (cloudData.participants) state.participants = cloudData.participants;
-              if (typeof cloudData.totalPoolBalance === 'number') state.totalPoolBalance = cloudData.totalPoolBalance;
-              if (cloudData.drawData) state.drawData = cloudData.drawData;
-              if (cloudData.adminPin) state.adminPin = cloudData.adminPin;
-
-              saveLocalDataOnly();
-              updateAdminUI();
-              updateBalanceDisplay();
-              updateDrawnDisplay();
-              render();
-            }
-          }, (err) => {
-            console.warn("Cloud sync error:", err);
-            updateCloudStatusBadge(false);
-          });
-
-        } catch (e) {
-          console.warn("Firebase não configurado ou erro ao iniciar:", e);
-          updateCloudStatusBadge(false);
-        }
-      } else {
-        updateCloudStatusBadge(false);
-      }
-
-      if (!state.drawData[state.currentLottery].estimatedPrize || state.drawData[state.currentLottery].numbers.length === 0) {
-        fetchLotteryResult();
-      }
-    }
-
-    function updateCloudStatusBadge(connected) {
-      const badge = document.getElementById('cloudStatusBadge');
-      const text = document.getElementById('cloudStatusText');
-      const icon = document.getElementById('cloudIcon');
-      if (!badge || !text || !icon) return;
-
-      badge.classList.remove('hidden');
-      if (connected) {
-        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 hidden sm:inline-flex items-center gap-1";
-        text.innerText = "Nuvem Ok";
-        icon.className = "fa-solid fa-cloud text-[9px] text-emerald-400";
-      } else {
-        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 hidden sm:inline-flex items-center gap-1";
-        text.innerText = "Local";
-        icon.className = "fa-solid fa-cloud-slash text-[9px] text-slate-500";
-      }
-    }
+    let app, auth, db;
 
     function loadStoredData() {
       try {
@@ -843,13 +900,22 @@
         const storedBalance = localStorage.getItem('bilhete_premiado_balance');
         if (storedBalance) state.totalPoolBalance = parseFloat(storedBalance) || 0.00;
 
+        const storedCota = localStorage.getItem('bilhete_premiado_cota');
+        if (storedCota) state.cotaPrice = parseFloat(storedCota) || 0.00;
+
+        const storedPixKey = localStorage.getItem('bilhete_premiado_pix_key');
+        if (storedPixKey) state.pixKey = storedPixKey;
+
+        const storedPixName = localStorage.getItem('bilhete_premiado_pix_name');
+        if (storedPixName) state.pixName = storedPixName;
+
         const storedAdmin = localStorage.getItem('bilhete_premiado_admin');
         if (storedAdmin === 'true') state.isAdmin = true;
 
         const storedPin = localStorage.getItem('bilhete_premiado_admin_pin');
         if (storedPin) state.adminPin = storedPin;
       } catch (e) {
-        console.error('Erro ao carregar dados salvos:', e);
+        console.error('Erro ao carregar dados locais:', e);
       }
     }
 
@@ -858,6 +924,9 @@
       localStorage.setItem('bilhete_premiado_participants', JSON.stringify(state.participants));
       localStorage.setItem('bilhete_premiado_draws', JSON.stringify(state.drawData));
       localStorage.setItem('bilhete_premiado_balance', state.totalPoolBalance.toString());
+      localStorage.setItem('bilhete_premiado_cota', state.cotaPrice.toString());
+      localStorage.setItem('bilhete_premiado_pix_key', state.pixKey || '');
+      localStorage.setItem('bilhete_premiado_pix_name', state.pixName || '');
       localStorage.setItem('bilhete_premiado_admin', state.isAdmin ? 'true' : 'false');
       localStorage.setItem('bilhete_premiado_admin_pin', state.adminPin);
     }
@@ -872,6 +941,9 @@
             bets: state.bets,
             participants: state.participants,
             totalPoolBalance: state.totalPoolBalance,
+            cotaPrice: state.cotaPrice,
+            pixKey: state.pixKey,
+            pixName: state.pixName,
             drawData: state.drawData,
             adminPin: state.adminPin,
             updatedAt: new Date().toISOString()
@@ -882,148 +954,184 @@
       }
     }
 
-    // Tab Navigation & Active Lottery Switching
-    function switchLottery(lotteryKey) {
-      if (!LOTTERIES[lotteryKey]) return;
-      state.currentLottery = lotteryKey;
+    function updateCloudStatusBadge(status, customText = '') {
+      const badge = document.getElementById('cloudStatusBadge');
+      const icon = document.getElementById('cloudIcon');
+      const text = document.getElementById('cloudStatusText');
 
-      document.querySelectorAll('.lottery-tab').forEach(tab => {
-        tab.classList.remove('bg-slate-800', 'text-white', 'border-slate-700', 'shadow-md');
-        tab.classList.add('text-slate-400', 'hover:bg-slate-800/50');
-      });
+      if (!badge || !icon || !text) return;
 
-      const activeTab = document.getElementById(`tab-${lotteryKey}`);
-      if (activeTab) {
-        activeTab.classList.remove('text-slate-400', 'hover:bg-slate-800/50');
-        activeTab.classList.add('bg-slate-800', 'text-white', 'border-slate-700', 'shadow-md');
-      }
+      badge.classList.remove('hidden');
 
-      const badge = document.getElementById('lotteryBadge');
-      const conf = LOTTERIES[lotteryKey];
-      badge.className = `px-2.5 py-0.5 text-xs font-bold uppercase rounded-md tracking-wider ${conf.badgeBg}`;
-      badge.innerText = conf.name;
-
-      updateDrawnDisplay();
-      render();
-
-      if (!state.drawData[lotteryKey]?.estimatedPrize || state.drawData[lotteryKey]?.numbers?.length === 0) {
-        fetchLotteryResult();
-      }
-    }
-
-    function updateDrawnDisplay() {
-      const lotteryKey = state.currentLottery;
-      const data = state.drawData[lotteryKey] || { contest: '---', date: '--/--/----', numbers: [], estimatedPrize: 0 };
-
-      document.getElementById('contestNum').innerText = data.contest || '---';
-      document.getElementById('contestDate').innerText = `(${data.date || '--/--/----'})`;
-
-      const container = document.getElementById('drawnBallsList');
-      if (!data.numbers || data.numbers.length === 0) {
-        container.innerHTML = `<span class="text-xs text-slate-500 italic">Nenhum resultado carregado ainda.</span>`;
+      if (status === true) {
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center gap-1";
+        icon.className = "fa-solid fa-cloud text-[9px]";
+        text.innerText = "Nuvem Ok";
       } else {
-        container.innerHTML = data.numbers.map(num => 
-          `<span class="w-8 h-8 rounded-full text-xs flex items-center justify-center font-mono ${getOfficialBallStyle(num)} shadow-md transition-transform hover:scale-110">${num}</span>`
-        ).join('');
-      }
-
-      const contestInput = document.getElementById('manualContestInput');
-      const numbersInput = document.getElementById('manualNumbersInput');
-      if (contestInput) contestInput.value = data.contest !== '---' ? data.contest : '';
-      if (numbersInput) numbersInput.value = data.numbers ? data.numbers.join(' ') : '';
-      
-      updatePrizeDivisionDisplay();
-    }
-
-    function toggleManualDrawnMode() {
-      const sec = document.getElementById('manualInputSection');
-      const label = document.getElementById('manualToggleLabel');
-      if (sec.classList.contains('hidden')) {
-        sec.classList.remove('hidden');
-        label.innerText = 'Fechar Edição Manual';
-      } else {
-        sec.classList.add('hidden');
-        label.innerText = 'Digitar Manualmente';
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800 flex items-center gap-1";
+        icon.className = "fa-solid fa-cloud-slash text-[9px]";
+        text.innerText = customText || "Local";
       }
     }
 
-    function saveManualDrawnNumbers() {
-      if (!state.isAdmin) return;
-      const contest = document.getElementById('manualContestInput').value.trim() || '---';
-      const rawNums = document.getElementById('manualNumbersInput').value;
-      let numbers = (rawNums.match(/\d+/g) || []).map(n => n.padStart(2, '0'));
-      numbers = Array.from(new Set(numbers)).sort((a, b) => parseInt(a) - parseInt(b));
+    async function initCloudStorage() {
+      loadStoredData();
+      updateAdminUI();
+      updateBalanceDisplay();
+      updatePixDisplay();
+      switchLottery('lotofacil');
 
-      const type = state.currentLottery;
-      state.drawData[type].contest = contest;
-      state.drawData[type].numbers = numbers;
-      state.drawData[type].date = new Date().toLocaleDateString('pt-BR');
+      if (userFirebaseConfig && userFirebaseConfig.apiKey) {
+        try {
+          app = initializeApp(userFirebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
 
-      saveData();
-      updateDrawnDisplay();
-      render();
-      showToast('Dezenas sorteadas salvas!');
+          await signInAnonymously(auth);
+
+          isCloudConnected = true;
+          updateCloudStatusBadge(true);
+
+          const stateDocRef = doc(db, 'bolao_dados', 'mainState');
+          
+          onSnapshot(stateDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const cloudData = docSnap.data();
+              if (cloudData.bets) state.bets = cloudData.bets;
+              if (cloudData.participants) state.participants = cloudData.participants;
+              if (typeof cloudData.totalPoolBalance === 'number') state.totalPoolBalance = cloudData.totalPoolBalance;
+              if (typeof cloudData.cotaPrice === 'number') state.cotaPrice = cloudData.cotaPrice;
+              if (cloudData.pixKey !== undefined) state.pixKey = cloudData.pixKey;
+              if (cloudData.pixName !== undefined) state.pixName = cloudData.pixName;
+              if (cloudData.drawData) state.drawData = cloudData.drawData;
+              if (cloudData.adminPin) state.adminPin = cloudData.adminPin;
+
+              saveLocalDataOnly();
+              updateAdminUI();
+              updateBalanceDisplay();
+              updatePixDisplay();
+              updateDrawnDisplay();
+              render();
+            }
+          }, (err) => {
+            console.warn("Cloud sync listening error:", err);
+            updateCloudStatusBadge(false, "Sinc. Indisponível");
+          });
+
+        } catch (e) {
+          console.warn("Firebase error:", e);
+          updateCloudStatusBadge(false, "Erro de Conexão");
+        }
+      }
     }
 
     function updateBalanceDisplay() {
       const display = document.getElementById('headerBalanceDisplay');
-      display.innerText = state.totalPoolBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      if (display) {
+        display.innerText = state.totalPoolBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      }
     }
 
     function openEditBalanceModal() {
       if (!state.isAdmin) return;
-      document.getElementById('balanceInputValue').value = state.totalPoolBalance.toFixed(2);
+      document.getElementById('cashBalanceInput').value = state.totalPoolBalance.toFixed(2);
       openModal('editBalanceModal');
     }
 
     function saveCashBalance() {
-      const val = parseFloat(document.getElementById('balanceInputValue').value) || 0;
-      state.totalPoolBalance = val;
+      if (!state.isAdmin) return;
+      const inputVal = parseFloat(document.getElementById('cashBalanceInput').value);
+      state.totalPoolBalance = isNaN(inputVal) ? 0.00 : inputVal;
       saveData();
       updateBalanceDisplay();
       closeModal('editBalanceModal');
       showToast('Saldo do caixa atualizado!');
     }
 
-    function toggleAdminModal() {
-      openModal('adminAuthModal');
-    }
-
-    function loginAdmin() {
-      const input = document.getElementById('adminPinInput');
-      if (input.value === state.adminPin) {
-        state.isAdmin = true;
-        saveData();
-        updateAdminUI();
-        closeModal('adminAuthModal');
-        input.value = '';
-        render();
-        showToast('Autenticado como Administrador!');
-      } else {
-        showToast('PIN incorreto.', 'warning');
+    function updatePixDisplay() {
+      const display = document.getElementById('headerCotaDisplay');
+      if (display) {
+        display.innerText = `${state.cotaPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / cota`;
       }
     }
 
-    function changeAdminPin() {
+    function openEditPixModal() {
       if (!state.isAdmin) return;
-      const newPin = document.getElementById('newAdminPinInput').value.trim();
-      if (!newPin || newPin.length < 3) {
-        showToast('O novo PIN deve ter pelo menos 3 dígitos.', 'warning');
+      document.getElementById('cotaPriceInput').value = state.cotaPrice ? state.cotaPrice.toFixed(2) : '0.00';
+      document.getElementById('pixKeyInput').value = state.pixKey || '';
+      document.getElementById('pixNameInput').value = state.pixName || '';
+      openModal('editPixModal');
+    }
+
+    function savePixInfo() {
+      if (!state.isAdmin) return;
+      state.cotaPrice = parseFloat(document.getElementById('cotaPriceInput').value) || 0.00;
+      state.pixKey = document.getElementById('pixKeyInput').value.trim();
+      state.pixName = document.getElementById('pixNameInput').value.trim();
+
+      saveData();
+      updatePixDisplay();
+      closeModal('editPixModal');
+      showToast('Dados de Cota e PIX atualizados!');
+    }
+
+    function copyPixKey() {
+      const pixKey = state.pixKey || 'Não cadastrada';
+      if (!state.pixKey) {
+        showToast('Nenhuma chave PIX cadastrada no momento.', 'warning');
         return;
       }
-      state.adminPin = newPin;
-      saveData();
-      document.getElementById('newAdminPinInput').value = '';
-      showToast('Senha de Admin alterada com sucesso!');
+
+      const tempInput = document.createElement('input');
+      tempInput.value = pixKey;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      document.getElementById('popupPixKeyDisplay').innerText = pixKey;
+      document.getElementById('popupPixNameDisplay').innerText = state.pixName || 'Administrador do Bolão';
+      document.getElementById('popupCotaPriceDisplay').innerText = state.cotaPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+      openModal('pixDetailsModal');
     }
 
-    function logoutAdmin() {
-      state.isAdmin = false;
-      saveData();
-      updateAdminUI();
-      closeModal('adminAuthModal');
-      render();
-      showToast('Modo Administrador encerrado.');
+    function previewModalTicketImage(url) {
+      const container = document.getElementById('ticketImagePreviewContainer');
+      const img = document.getElementById('ticketImagePreview');
+      if (url && url.trim().length > 5) {
+        currentModalTicketImageData = url.trim();
+        img.src = url.trim();
+        container.classList.remove('hidden');
+      } else if (!currentModalTicketImageData) {
+        container.classList.add('hidden');
+      }
+    }
+
+    function handleTicketFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        currentModalTicketImageData = base64;
+        document.getElementById('gameTicketImageUrl').value = '';
+        previewModalTicketImage(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function viewTicketImage(gameId) {
+      const bet = state.bets.find(b => b.id === gameId);
+      if (!bet || !bet.ticketImage) {
+        showToast('Nenhum bilhete cadastrado para este jogo.', 'warning');
+        return;
+      }
+
+      document.getElementById('viewTicketTitle').innerHTML = `<i class="fa-solid fa-ticket text-amber-400"></i><span>Bilhete: ${escapeHtml(bet.title || 'Jogo do Bolão')}</span>`;
+      document.getElementById('fullTicketImage').src = bet.ticketImage;
+      openModal('viewTicketModal');
     }
 
     function updateAdminUI() {
@@ -1036,6 +1144,7 @@
       const adminBackupBtn = document.getElementById('adminBackupBtn');
       const adminResultControls = document.getElementById('adminResultControls');
       const editBalanceBtn = document.getElementById('editBalanceBtn');
+      const editPixBtn = document.getElementById('editPixBtn');
       const addParticipantBtn = document.getElementById('addParticipantBtn');
       const addGameBtn = document.getElementById('addGameBtn');
       const adminPrizeBtn = document.getElementById('adminPrizeBtn');
@@ -1052,6 +1161,7 @@
         adminBackupBtn.classList.remove('hidden');
         adminResultControls.classList.remove('hidden');
         editBalanceBtn.classList.remove('hidden');
+        if (editPixBtn) editPixBtn.classList.remove('hidden');
         addParticipantBtn.classList.remove('hidden');
         addGameBtn.classList.remove('hidden');
         if (adminPrizeBtn) adminPrizeBtn.classList.remove('hidden');
@@ -1067,163 +1177,232 @@
         adminBackupBtn.classList.add('hidden');
         adminResultControls.classList.add('hidden');
         editBalanceBtn.classList.add('hidden');
+        if (editPixBtn) editPixBtn.classList.add('hidden');
         addParticipantBtn.classList.add('hidden');
         addGameBtn.classList.add('hidden');
         if (adminPrizeBtn) adminPrizeBtn.classList.add('hidden');
       }
     }
 
-    function getTotalCotas(lotteryKey = state.currentLottery) {
-      return state.participants.reduce((acc, p) => acc + getParticipantCotasForLottery(p, lotteryKey), 0);
+    function toggleAdminModal() {
+      openModal('adminAuthModal');
     }
 
-    function getParticipantCotasForLottery(p, lotteryKey) {
-      if (p.lotteries && typeof p.lotteries === 'object') {
-        return parseInt(p.lotteries[lotteryKey]) || 0;
-      }
-      return parseInt(p.cotas) || 0;
-    }
-
-    function toggleLotteryCotaInput(lotteryKey) {
-      const chk = document.getElementById(`part_check_${lotteryKey}`);
-      const inp = document.getElementById(`part_cota_${lotteryKey}`);
-      if (chk && inp) {
-        inp.disabled = !chk.checked;
-        if (chk.checked && (!inp.value || parseInt(inp.value) < 1)) {
-          inp.value = 1;
-        }
+    function loginAdmin() {
+      const pin = document.getElementById('adminPinInput').value;
+      if (pin === state.adminPin) {
+        state.isAdmin = true;
+        saveData();
+        updateAdminUI();
+        render();
+        closeModal('adminAuthModal');
+        document.getElementById('adminPinInput').value = '';
+        showToast('Login de Administrador efetuado!');
+      } else {
+        showToast('PIN de Administrador incorreto!', 'warning');
       }
     }
 
-    function openPrizeModal() {
-      if (!state.isAdmin) return;
-      const currentPrize = state.drawData[state.currentLottery].estimatedPrize || 0;
-      document.getElementById('prizeInputValue').value = currentPrize.toFixed(2);
-      openModal('editPrizeModal');
+    function changeAdminPin() {
+      const newPin = document.getElementById('newAdminPinInput').value.trim();
+      if (newPin.length >= 4) {
+        state.adminPin = newPin;
+        saveData();
+        document.getElementById('newAdminPinInput').value = '';
+        showToast('PIN de Admin atualizado com sucesso!');
+      } else {
+        showToast('O PIN deve ter no mínimo 4 caracteres.', 'warning');
+      }
     }
 
-    function saveEstimatedPrize() {
-      const val = parseFloat(document.getElementById('prizeInputValue').value) || 0;
-      state.drawData[state.currentLottery].estimatedPrize = val;
+    function logoutAdmin() {
+      state.isAdmin = false;
       saveData();
-      updatePrizeDivisionDisplay();
-      renderParticipantsList();
-      closeModal('editPrizeModal');
-      showToast('Valor do prêmio atualizado!');
+      updateAdminUI();
+      render();
+      closeModal('adminAuthModal');
+      showToast('Você saiu do modo administrador.');
     }
 
-    function updatePrizeDivisionDisplay() {
-      const current = state.drawData[state.currentLottery];
-      const estimatedPrize = current ? (current.estimatedPrize || 0) : 0;
-      const totalCotas = getTotalCotas(state.currentLottery);
-      const valPerCota = totalCotas > 0 ? (estimatedPrize / totalCotas) : 0;
+    function switchLottery(lotteryKey) {
+      state.currentLottery = lotteryKey;
 
-      document.getElementById('prizeEstimateDisplay').innerText = estimatedPrize.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      document.getElementById('totalCotasDisplay').innerText = `${totalCotas} ${totalCotas === 1 ? 'cota' : 'cotas'}`;
-      document.getElementById('prizePerCotaDisplay').innerText = valPerCota.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
+      document.querySelectorAll('.lottery-tab').forEach(tab => {
+        tab.classList.remove('bg-slate-800', 'text-white', 'border-slate-700', 'shadow-md');
+        tab.classList.add('text-slate-400');
+      });
 
-    function parsePrizeValue(data) {
-      if (!data) return 0;
-      const candidates = [
-        data.valorEstimadoProximoConcurso,
-        data.valor_estimado_proximo_concurso,
-        data.valorPremioEstimadoProximoConcurso,
-        data.acumuladaProxConcurso,
-        data.valorAcumuladoProximoConcurso,
-        data.valorAcumulado,
-        data.valorPremio
-      ];
-
-      for (let val of candidates) {
-        if (val !== undefined && val !== null && val !== '') {
-          if (typeof val === 'number' && val > 0) return val;
-          if (typeof val === 'string') {
-            let cleaned = val.replace(/[^\d,\.]/g, '');
-            if (cleaned.includes(',')) {
-              cleaned = cleaned.replace(/\./g, '').replace(',', '.');
-            }
-            let parsed = parseFloat(cleaned);
-            if (!isNaN(parsed) && parsed > 0) return parsed;
-          }
-        }
+      const activeTab = document.getElementById(`tab-${lotteryKey}`);
+      if (activeTab) {
+        activeTab.classList.add('bg-slate-800', 'text-white', 'border-slate-700', 'shadow-md');
+        activeTab.classList.remove('text-slate-400');
       }
 
-      if (Array.isArray(data.premiacao) && data.premiacao.length > 0) {
-        const topTier = data.premiacao[0];
-        if (topTier && (topTier.valorPremio || topTier.valor_premio)) {
-          let val = topTier.valorPremio || topTier.valor_premio;
-          if (typeof val === 'number' && val > 0) return val;
-          if (typeof val === 'string') {
-            let cleaned = val.replace(/[^\d,\.]/g, '');
-            if (cleaned.includes(',')) cleaned = cleaned.replace(/\./g, '').replace(',', '.');
-            let parsed = parseFloat(cleaned);
-            if (!isNaN(parsed) && parsed > 0) return parsed;
-          }
-        }
-      }
+      const conf = LOTTERIES[lotteryKey];
+      const badge = document.getElementById('lotteryBadge');
+      badge.innerText = conf.name;
+      badge.className = `px-2.5 py-0.5 text-xs font-bold uppercase rounded-md tracking-wider ${conf.badgeBg}`;
 
-      return 0;
+      updateDrawnDisplay();
+      render();
+
+      if (!state.drawData[lotteryKey].numbers || state.drawData[lotteryKey].numbers.length === 0) {
+        fetchLotteryResult();
+      }
     }
 
     async function fetchLotteryResult() {
-      const type = state.currentLottery;
-      const apiSlug = LOTTERIES[type].apiSlug;
+      const activeKey = state.currentLottery;
+      const apiSlug = LOTTERIES[activeKey].apiSlug;
       const refreshIcon = document.getElementById('refreshIcon');
-      const statusText = document.getElementById('apiStatusText');
 
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
-      if (statusText) statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> Buscando resultado e valor do prêmio...`;
 
       try {
-        let data = null;
+        const response = await fetch(`https://loteriascaixa-api.herokuapp.com/api/${apiSlug}/latest`);
+        if (!response.ok) throw new Error('Falha ao obter dados da API');
+        
+        const data = await response.json();
 
-        try {
-          const response = await fetch(`https://loteriascaixa-api.herokuapp.com/api/${apiSlug}/latest`);
-          if (response.ok) data = await response.json();
-        } catch (e) {
-          console.warn('Primary API fetch error, trying fallback...', e);
-        }
+        const contest = data.concurso ? data.concurso.toString() : '---';
+        const date = data.data || '--/--/----';
+        const rawNumbers = data.dezenas || [];
+        const numbers = rawNumbers.map(n => n.toString().padStart(2, '0'));
 
-        if (!data) {
-          const fallbackRes = await fetch(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${apiSlug}`);
-          if (fallbackRes.ok) data = await fallbackRes.json();
-        }
+        let prize = 0;
+        if (data.valorEstimadoProximoConcurso) prize = parsePrizeValue(data.valorEstimadoProximoConcurso);
+        else if (data.valorAcumuladoProximoConcurso) prize = parsePrizeValue(data.valorAcumuladoProximoConcurso);
+        else if (data.acumuladaProxConcurso) prize = parsePrizeValue(data.acumuladaProxConcurso);
 
-        if (!data) throw new Error('Não foi possível obter dados da API de loterias.');
-
-        let numbers = [];
-        if (Array.isArray(data.dezenas)) {
-          numbers = data.dezenas.map(n => n.toString().padStart(2, '0'));
-        } else if (Array.isArray(data.listaDezenas)) {
-          numbers = data.listaDezenas.map(n => n.toString().padStart(2, '0'));
-        }
-
-        let prizeVal = parsePrizeValue(data);
-        if (prizeVal === 0 && state.drawData[type].estimatedPrize) {
-          prizeVal = state.drawData[type].estimatedPrize;
-        }
-
-        state.drawData[type] = {
-          contest: data.concurso || data.numero || '---',
-          date: data.data || data.dataApuracao || new Date().toLocaleDateString('pt-BR'),
-          numbers: numbers.length > 0 ? numbers : (state.drawData[type].numbers || []),
-          estimatedPrize: prizeVal
+        state.drawData[activeKey] = {
+          contest,
+          date,
+          numbers,
+          estimatedPrize: prize || state.drawData[activeKey].estimatedPrize || 0
         };
 
         saveData();
         updateDrawnDisplay();
         render();
-
-        if (statusText) statusText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Resultado e prêmio sincronizados via API.`;
-        showToast('Prêmio e dezenas atualizados!');
-
-      } catch (error) {
-        console.warn('API indisponível:', error);
-        if (statusText) statusText.innerHTML = `<i class="fa-solid fa-circle-info text-emerald-400"></i> Atualizando acertos dos jogos...`;
+        showToast(`Resultado da ${LOTTERIES[activeKey].name} atualizado!`);
+      } catch (err) {
+        console.warn('API error, keeping fallback/cached result:', err);
+        showToast('Não foi possível conectar à API. Exibindo dados salvos.', 'warning');
       } finally {
         if (refreshIcon) refreshIcon.classList.remove('fa-spin');
       }
+    }
+
+    function toggleManualDrawnMode() {
+      if (!state.isAdmin) return;
+      state.isManualMode = !state.isManualMode;
+      const container = document.getElementById('manualInputSection');
+      const label = document.getElementById('manualToggleLabel');
+
+      if (state.isManualMode) {
+        container.classList.remove('hidden');
+        label.innerText = 'Fechar Edição';
+        const currentData = state.drawData[state.currentLottery];
+        document.getElementById('manualContestInput').value = currentData.contest !== '---' ? currentData.contest : '';
+        document.getElementById('manualNumbersInput').value = currentData.numbers ? currentData.numbers.join(' ') : '';
+      } else {
+        container.classList.add('hidden');
+        label.innerText = 'Digitar Manualmente';
+      }
+    }
+
+    function saveManualDrawnNumbers() {
+      if (!state.isAdmin) return;
+      const activeKey = state.currentLottery;
+      const contest = document.getElementById('manualContestInput').value.trim() || '---';
+      const rawText = document.getElementById('manualNumbersInput').value;
+
+      let numbers = (rawText.match(/\d+/g) || []).map(n => n.padStart(2, '0'));
+      numbers = Array.from(new Set(numbers)).sort((a, b) => parseInt(a) - parseInt(b));
+
+      state.drawData[activeKey] = {
+        ...state.drawData[activeKey],
+        contest,
+        date: new Date().toLocaleDateString('pt-BR'),
+        numbers
+      };
+
+      saveData();
+      updateDrawnDisplay();
+      render();
+      toggleManualDrawnMode();
+      showToast('Resultado manual salvo com sucesso!');
+    }
+
+    function openPrizeModal() {
+      if (!state.isAdmin) return;
+      const currentPrize = state.drawData[state.currentLottery]?.estimatedPrize || 0;
+      document.getElementById('estimatedPrizeInput').value = currentPrize ? currentPrize.toFixed(2) : '0.00';
+      openModal('prizeModal');
+    }
+
+    function saveEstimatedPrize() {
+      if (!state.isAdmin) return;
+      const activeKey = state.currentLottery;
+      const prizeInput = parseFloat(document.getElementById('estimatedPrizeInput').value) || 0;
+
+      if (!state.drawData[activeKey]) {
+        state.drawData[activeKey] = { contest: '---', date: '--/--/----', numbers: [], estimatedPrize: prizeInput };
+      } else {
+        state.drawData[activeKey].estimatedPrize = prizeInput;
+      }
+
+      saveData();
+      updatePrizeDivisionDisplay();
+      renderParticipantsList();
+      closeModal('prizeModal');
+      showToast('Prêmio estimado atualizado!');
+    }
+
+    function updateDrawnDisplay() {
+      const activeKey = state.currentLottery;
+      const drawInfo = state.drawData[activeKey] || { contest: '---', date: '--/--/----', numbers: [] };
+
+      document.getElementById('contestNum').innerText = drawInfo.contest || '---';
+      document.getElementById('contestDate').innerText = `(${drawInfo.date || '--/--/----'})`;
+
+      const listContainer = document.getElementById('drawnBallsList');
+      listContainer.innerHTML = '';
+
+      if (!drawInfo.numbers || drawInfo.numbers.length === 0) {
+        listContainer.innerHTML = '<span class="text-xs text-slate-500 italic">Nenhum resultado carregado ainda.</span>';
+        return;
+      }
+
+      drawInfo.numbers.forEach(numStr => {
+        const ball = document.createElement('span');
+        const colorStyle = getOfficialBallStyle(numStr);
+        ball.className = `w-8 h-8 rounded-full text-xs flex items-center justify-center font-mono shadow-md ${colorStyle} transition-transform hover:scale-110`;
+        ball.innerText = numStr;
+        listContainer.appendChild(ball);
+      });
+
+      updatePrizeDivisionDisplay();
+    }
+
+    function getTotalCotas(lotteryKey) {
+      return state.participants.reduce((sum, p) => sum + getParticipantCotasForLottery(p, lotteryKey), 0);
+    }
+
+    function getParticipantCotasForLottery(participant, lotteryKey) {
+      if (!participant || !participant.lotteries) return 0;
+      return parseInt(participant.lotteries[lotteryKey]) || 0;
+    }
+
+    function updatePrizeDivisionDisplay() {
+      const activeKey = state.currentLottery;
+      const estimatedPrize = state.drawData[activeKey]?.estimatedPrize || 0;
+      const totalCotas = getTotalCotas(activeKey);
+      const valPerCota = totalCotas > 0 ? (estimatedPrize / totalCotas) : 0;
+
+      document.getElementById('prizeEstimateDisplay').innerText = estimatedPrize.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('totalCotasDisplay').innerText = `${totalCotas} ${totalCotas === 1 ? 'cota' : 'cotas'}`;
+      document.getElementById('prizePerCotaDisplay').innerText = valPerCota.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
     function openAddParticipantModal() {
@@ -1243,6 +1422,17 @@
 
       document.getElementById('participantModalTitle').innerHTML = '<i class="fa-solid fa-user-plus text-emerald-400"></i><span>Novo Participante</span>';
       openModal('participantModal');
+    }
+
+    function toggleLotteryCotaInput(lotteryKey) {
+      const chk = document.getElementById(`part_check_${lotteryKey}`);
+      const inp = document.getElementById(`part_cota_${lotteryKey}`);
+      if (chk && inp) {
+        inp.disabled = !chk.checked;
+        if (chk.checked && (!inp.value || parseInt(inp.value) < 1)) {
+          inp.value = 1;
+        }
+      }
     }
 
     function handleSaveParticipant(e) {
@@ -1416,8 +1606,8 @@
 
       const cardsContainer = document.getElementById('participantsCardsList');
       const currentLottery = state.currentLottery;
-      const drawnNumbers = state.drawData[currentLottery].numbers || [];
-      const officialContest = state.drawData[currentLottery].contest || '---';
+      const drawnNumbers = state.drawData[currentLottery]?.numbers || [];
+      const officialContest = state.drawData[currentLottery]?.contest || '---';
 
       let filteredBets = state.bets.filter(b => b.lottery === currentLottery);
 
@@ -1480,6 +1670,13 @@
           return `<span class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-mono ${hitStyle} transition-transform hover:scale-110">${num}</span>`;
         }).join('');
 
+        const ticketBtnHtml = bet.ticketImage ? `
+          <button onclick="viewTicketImage('${bet.id}')" class="px-2.5 py-1 text-[11px] font-semibold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg transition flex items-center gap-1">
+            <i class="fa-solid fa-camera text-xs"></i>
+            <span>Ver Bilhete</span>
+          </button>
+        ` : '';
+
         const actionsHtml = state.isAdmin ? `
           <div class="flex items-center justify-end space-x-2 border-t md:border-t-0 md:border-l border-slate-800 pt-3 md:pt-0 md:pl-4">
             <button onclick="editGame('${bet.id}')" title="Editar Jogo" class="p-2 text-slate-400 hover:text-emerald-400 bg-slate-950 hover:bg-slate-800 rounded-lg transition border border-slate-800">
@@ -1500,6 +1697,7 @@
                 <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">
                   ${bet.numbers.length} dezenas
                 </span>
+                ${ticketBtnHtml}
               </div>
 
               <div class="flex items-center space-x-2">
@@ -1646,6 +1844,9 @@
       if (!state.isAdmin) return;
       document.getElementById('gameForm').reset();
       document.getElementById('editingGameId').value = '';
+      currentModalTicketImageData = '';
+      document.getElementById('ticketImagePreviewContainer').classList.add('hidden');
+
       const activeLottery = state.currentLottery;
       document.getElementById('lotterySelect').value = activeLottery;
       document.getElementById('gameCostInput').value = (LOTTERIES[activeLottery].defaultCost || 3.00).toFixed(2);
@@ -1679,7 +1880,15 @@
       }
 
       const existingIndex = state.bets.findIndex(b => b.id === id);
-      const newBet = { id, title, lottery, cost, targetContest, numbers };
+      const newBet = { 
+        id, 
+        title, 
+        lottery, 
+        cost, 
+        targetContest, 
+        numbers,
+        ticketImage: currentModalTicketImageData || ''
+      };
 
       if (existingIndex >= 0) {
         state.bets[existingIndex] = newBet;
@@ -1714,6 +1923,14 @@
       document.getElementById('gameContestNumberInput').value = isSpecific ? bet.targetContest : '';
       toggleContestNumberInput(isSpecific ? 'specific' : 'teimosinha');
 
+      currentModalTicketImageData = bet.ticketImage || '';
+      document.getElementById('gameTicketImageUrl').value = bet.ticketImage && !bet.ticketImage.startsWith('data:') ? bet.ticketImage : '';
+      if (bet.ticketImage) {
+        previewModalTicketImage(bet.ticketImage);
+      } else {
+        document.getElementById('ticketImagePreviewContainer').classList.add('hidden');
+      }
+
       document.getElementById('gameModalTitle').innerText = 'Editar Jogo do Bolão';
 
       selectedNumbersPicker = new Set(bet.numbers);
@@ -1736,7 +1953,10 @@
         document.getElementById('jsonArea').value = JSON.stringify({
           participants: state.participants,
           bets: state.bets,
-          balance: state.totalPoolBalance
+          balance: state.totalPoolBalance,
+          cotaPrice: state.cotaPrice,
+          pixKey: state.pixKey,
+          pixName: state.pixName
         }, null, 2);
       }
       document.getElementById(id).classList.remove('hidden');
@@ -1762,9 +1982,13 @@
           if (Array.isArray(parsed.bets)) state.bets = parsed.bets;
           if (Array.isArray(parsed.participants)) state.participants = parsed.participants;
           if (typeof parsed.balance === 'number') state.totalPoolBalance = parsed.balance;
+          if (typeof parsed.cotaPrice === 'number') state.cotaPrice = parsed.cotaPrice;
+          if (parsed.pixKey) state.pixKey = parsed.pixKey;
+          if (parsed.pixName) state.pixName = parsed.pixName;
 
           saveData();
           updateBalanceDisplay();
+          updatePixDisplay();
           render();
           closeModal('importExportModal');
           showToast('Dados do bolão importados!');
@@ -1799,12 +2023,17 @@
       });
     }
 
-    // Bind all functions to window for inline HTML handlers
     window.switchLottery = switchLottery;
     window.toggleManualDrawnMode = toggleManualDrawnMode;
     window.saveManualDrawnNumbers = saveManualDrawnNumbers;
     window.openEditBalanceModal = openEditBalanceModal;
     window.saveCashBalance = saveCashBalance;
+    window.openEditPixModal = openEditPixModal;
+    window.savePixInfo = savePixInfo;
+    window.copyPixKey = copyPixKey;
+    window.previewModalTicketImage = previewModalTicketImage;
+    window.handleTicketFileUpload = handleTicketFileUpload;
+    window.viewTicketImage = viewTicketImage;
     window.toggleAdminModal = toggleAdminModal;
     window.loginAdmin = loginAdmin;
     window.changeAdminPin = changeAdminPin;
@@ -1832,7 +2061,7 @@
     window.copyJsonToClipboard = copyJsonToClipboard;
     window.importJsonData = importJsonData;
 
-    // Start App & Initialize Cloud Connection
+    // Start App on Load
     window.addEventListener('load', initCloudStorage);
   </script>
 </body>
