@@ -69,6 +69,10 @@
           <h1 class="font-extrabold text-lg sm:text-xl tracking-tight text-white flex items-center gap-2">
             Bilhete Premiado
             <span id="roleBadge" class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 hidden sm:inline-block">Membro</span>
+            <span id="cloudStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 hidden sm:inline-flex items-center gap-1" title="Status da sincronização em tempo real">
+              <i class="fa-solid fa-cloud text-[9px]" id="cloudIcon"></i>
+              <span id="cloudStatusText">Local</span>
+            </span>
           </h1>
           <p class="text-xs text-slate-400 hidden sm:block">Acompanhamento contínuo do Bolão</p>
         </div>
@@ -621,8 +625,12 @@
     <span id="toastMessage" class="text-xs font-medium text-slate-200">Notificação</span>
   </div>
 
-  <!-- JavaScript Logic -->
-  <script>
+  <!-- Firebase Cloud Sync & Main Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     // Configuration for Supported Lotteries
     const LOTTERIES = {
       lotofacil: {
@@ -676,7 +684,6 @@
       }
     };
 
-    // Official Caixa Ball Color Mapping by Last Digit (1-Red, 2-Yellow, 3-Green, 4-Brown, 5-Blue, 6-Pink, 7-Black, 8-Gray, 9-Orange, 0-White)
     function getOfficialBallStyle(numStr) {
       const lastDigit = numStr.slice(-1);
       switch (lastDigit) {
@@ -714,18 +721,90 @@
     let selectedNumbersPicker = new Set();
     let participantToDeleteId = null;
 
-    // Initialization
-    window.onload = function() {
+    // Cloud Database Variables
+    let db = null;
+    let auth = null;
+    let isCloudConnected = false;
+    let appId = 'bilhete-premiado-default';
+
+    // Cloud Initialization & Real-Time Sync
+    async function initCloudStorage() {
       loadStoredData();
       updateAdminUI();
       updateBalanceDisplay();
       switchLottery('lotofacil');
-      
-      // Auto-fetch API result on startup if prize or numbers are missing
+
+      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+        try {
+          const firebaseConfig = JSON.parse(__firebase_config);
+          appId = typeof __app_id !== 'undefined' ? __app_id : 'bilhete-premiado-default';
+
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+
+          isCloudConnected = true;
+          updateCloudStatusBadge(true);
+
+          // Realtime Listener for Bolão State across all devices
+          const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'bolao', 'mainState');
+          
+          onSnapshot(stateDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const cloudData = docSnap.data();
+              if (cloudData.bets) state.bets = cloudData.bets;
+              if (cloudData.participants) state.participants = cloudData.participants;
+              if (typeof cloudData.totalPoolBalance === 'number') state.totalPoolBalance = cloudData.totalPoolBalance;
+              if (cloudData.drawData) state.drawData = cloudData.drawData;
+              if (cloudData.adminPin) state.adminPin = cloudData.adminPin;
+
+              saveLocalDataOnly();
+              updateAdminUI();
+              updateBalanceDisplay();
+              updateDrawnDisplay();
+              render();
+            }
+          }, (err) => {
+            console.warn("Cloud sync error:", err);
+            updateCloudStatusBadge(false);
+          });
+
+        } catch (e) {
+          console.warn("Firebase not configured or failed to start:", e);
+          updateCloudStatusBadge(false);
+        }
+      } else {
+        updateCloudStatusBadge(false);
+      }
+
       if (!state.drawData[state.currentLottery].estimatedPrize || state.drawData[state.currentLottery].numbers.length === 0) {
         fetchLotteryResult();
       }
-    };
+    }
+
+    function updateCloudStatusBadge(connected) {
+      const badge = document.getElementById('cloudStatusBadge');
+      const text = document.getElementById('cloudStatusText');
+      const icon = document.getElementById('cloudIcon');
+      if (!badge || !text || !icon) return;
+
+      badge.classList.remove('hidden');
+      if (connected) {
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 hidden sm:inline-flex items-center gap-1";
+        text.innerText = "Nuvem Ok";
+        icon.className = "fa-solid fa-cloud text-[9px] text-emerald-400";
+      } else {
+        badge.className = "text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 hidden sm:inline-flex items-center gap-1";
+        text.innerText = "Local";
+        icon.className = "fa-solid fa-cloud-slash text-[9px] text-slate-500";
+      }
+    }
 
     function loadStoredData() {
       try {
@@ -751,7 +830,7 @@
       }
     }
 
-    function saveData() {
+    function saveLocalDataOnly() {
       localStorage.setItem('bilhete_premiado_bets', JSON.stringify(state.bets));
       localStorage.setItem('bilhete_premiado_participants', JSON.stringify(state.participants));
       localStorage.setItem('bilhete_premiado_draws', JSON.stringify(state.drawData));
@@ -760,12 +839,31 @@
       localStorage.setItem('bilhete_premiado_admin_pin', state.adminPin);
     }
 
+    async function saveData() {
+      saveLocalDataOnly();
+
+      if (isCloudConnected && db && auth?.currentUser) {
+        try {
+          const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'bolao', 'mainState');
+          await setDoc(stateDocRef, {
+            bets: state.bets,
+            participants: state.participants,
+            totalPoolBalance: state.totalPoolBalance,
+            drawData: state.drawData,
+            adminPin: state.adminPin,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) {
+          console.error("Erro ao sincronizar na nuvem:", e);
+        }
+      }
+    }
+
     // Tab Navigation & Active Lottery Switching
     function switchLottery(lotteryKey) {
       if (!LOTTERIES[lotteryKey]) return;
       state.currentLottery = lotteryKey;
 
-      // Update tab styles
       document.querySelectorAll('.lottery-tab').forEach(tab => {
         tab.classList.remove('bg-slate-800', 'text-white', 'border-slate-700', 'shadow-md');
         tab.classList.add('text-slate-400', 'hover:bg-slate-800/50');
@@ -777,7 +875,6 @@
         activeTab.classList.add('bg-slate-800', 'text-white', 'border-slate-700', 'shadow-md');
       }
 
-      // Update Badge
       const badge = document.getElementById('lotteryBadge');
       const conf = LOTTERIES[lotteryKey];
       badge.className = `px-2.5 py-0.5 text-xs font-bold uppercase rounded-md tracking-wider ${conf.badgeBg}`;
@@ -786,7 +883,6 @@
       updateDrawnDisplay();
       render();
 
-      // Auto-fetch if prize is 0 for this lottery
       if (!state.drawData[lotteryKey]?.estimatedPrize || state.drawData[lotteryKey]?.numbers?.length === 0) {
         fetchLotteryResult();
       }
@@ -846,7 +942,6 @@
       showToast('Dezenas sorteadas salvas!');
     }
 
-    // Cash Balance Management
     function updateBalanceDisplay() {
       const display = document.getElementById('headerBalanceDisplay');
       display.innerText = state.totalPoolBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -955,7 +1050,6 @@
       }
     }
 
-    /* PRIZE & SHARE CALCULATIONS */
     function getTotalCotas(lotteryKey = state.currentLottery) {
       return state.participants.reduce((acc, p) => acc + getParticipantCotasForLottery(p, lotteryKey), 0);
     }
@@ -964,7 +1058,6 @@
       if (p.lotteries && typeof p.lotteries === 'object') {
         return parseInt(p.lotteries[lotteryKey]) || 0;
       }
-      // Fallback for legacy participant data
       return parseInt(p.cotas) || 0;
     }
 
@@ -1007,11 +1100,8 @@
       document.getElementById('prizePerCotaDisplay').innerText = valPerCota.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
-    // Robust Currency Number Parser for API Responses
     function parsePrizeValue(data) {
       if (!data) return 0;
-
-      // Check candidate fields returned by various CAIXA APIs
       const candidates = [
         data.valorEstimadoProximoConcurso,
         data.valor_estimado_proximo_concurso,
@@ -1026,7 +1116,6 @@
         if (val !== undefined && val !== null && val !== '') {
           if (typeof val === 'number' && val > 0) return val;
           if (typeof val === 'string') {
-            // Remove R$, spaces, dots used as thousand separators, then replace comma with dot
             let cleaned = val.replace(/[^\d,\.]/g, '');
             if (cleaned.includes(',')) {
               cleaned = cleaned.replace(/\./g, '').replace(',', '.');
@@ -1037,7 +1126,6 @@
         }
       }
 
-      // Check premiacao array if available
       if (Array.isArray(data.premiacao) && data.premiacao.length > 0) {
         const topTier = data.premiacao[0];
         if (topTier && (topTier.valorPremio || topTier.valor_premio)) {
@@ -1067,27 +1155,20 @@
       try {
         let data = null;
 
-        // Try primary API
         try {
           const response = await fetch(`https://loteriascaixa-api.herokuapp.com/api/${apiSlug}/latest`);
-          if (response.ok) {
-            data = await response.json();
-          }
+          if (response.ok) data = await response.json();
         } catch (e) {
           console.warn('Primary API fetch error, trying fallback...', e);
         }
 
-        // Try fallback endpoint if primary failed
         if (!data) {
           const fallbackRes = await fetch(`https://servicebus2.caixa.gov.br/portaldeloterias/api/${apiSlug}`);
-          if (fallbackRes.ok) {
-            data = await fallbackRes.json();
-          }
+          if (fallbackRes.ok) data = await fallbackRes.json();
         }
 
         if (!data) throw new Error('Não foi possível obter dados da API de loterias.');
 
-        // Extract drawn numbers
         let numbers = [];
         if (Array.isArray(data.dezenas)) {
           numbers = data.dezenas.map(n => n.toString().padStart(2, '0'));
@@ -1095,10 +1176,7 @@
           numbers = data.listaDezenas.map(n => n.toString().padStart(2, '0'));
         }
 
-        // Parse estimated prize value correctly
         let prizeVal = parsePrizeValue(data);
-
-        // Keep current prize if API returns 0 or missing, else update
         if (prizeVal === 0 && state.drawData[type].estimatedPrize) {
           prizeVal = state.drawData[type].estimatedPrize;
         }
@@ -1125,18 +1203,16 @@
       }
     }
 
-    /* PARTICIPANTS MANAGEMENT */
     function openAddParticipantModal() {
       if (!state.isAdmin) return;
       document.getElementById('participantForm').reset();
       document.getElementById('editingParticipantId').value = '';
-      
-      // Reset checkboxes and cota inputs
+
       ['lotofacil', 'megasena', 'quina', 'lotomania'].forEach(key => {
         const chk = document.getElementById(`part_check_${key}`);
         const inp = document.getElementById(`part_cota_${key}`);
         if (chk && inp) {
-          chk.checked = (key === state.currentLottery); // Auto-check active lottery
+          chk.checked = (key === state.currentLottery);
           inp.value = 1;
           inp.disabled = !chk.checked;
         }
@@ -1211,7 +1287,6 @@
       });
 
       document.getElementById('participantModalTitle').innerHTML = '<i class="fa-solid fa-user-pen text-emerald-400"></i><span>Editar Participante</span>';
-
       openModal('participantModal');
     }
 
@@ -1246,10 +1321,9 @@
       const estimatedPrize = state.drawData[currentLottery]?.estimatedPrize || 0;
       const valPerCota = totalCotas > 0 ? (estimatedPrize / totalCotas) : 0;
 
-      // Filter participants who participate in THIS specific lottery
       const activeParticipants = state.participants.filter(p => getParticipantCotasForLottery(p, currentLottery) > 0);
-
       const lotteryName = LOTTERIES[currentLottery]?.name || '';
+
       countBadge.innerText = `${activeParticipants.length} ${activeParticipants.length === 1 ? 'membro' : 'membros'} (${lotteryName})`;
       container.innerHTML = '';
 
@@ -1264,7 +1338,6 @@
         const cotasCount = getParticipantCotasForLottery(part, currentLottery);
         const participantPayout = cotasCount * valPerCota;
 
-        // Create lottery badges for this member
         const lotteryBadges = Object.keys(LOTTERIES).map(key => {
           const count = getParticipantCotasForLottery(part, key);
           if (count > 0) {
@@ -1314,7 +1387,6 @@
       });
     }
 
-    /* RENDER APPLICATION MAIN VIEW */
     function render() {
       updatePrizeDivisionDisplay();
       renderParticipantsList();
@@ -1324,10 +1396,8 @@
       const drawnNumbers = state.drawData[currentLottery].numbers || [];
       const officialContest = state.drawData[currentLottery].contest || '---';
 
-      // Filter games/bets for active lottery
       let filteredBets = state.bets.filter(b => b.lottery === currentLottery);
 
-      // Compute hits
       filteredBets = filteredBets.map(bet => {
         const hits = bet.numbers.filter(num => drawnNumbers.includes(num));
         return {
@@ -1338,7 +1408,6 @@
         };
       });
 
-      // Sort by highest hits
       filteredBets.sort((a, b) => b.hitsCount - a.hitsCount);
 
       document.getElementById('totalGamesBadge').innerText = `(${filteredBets.length} ${filteredBets.length === 1 ? 'jogo' : 'jogos'})`;
@@ -1363,7 +1432,6 @@
 
         const formattedCost = bet.cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        // Contest Badge Logic
         let contestBadgeHtml = '';
         const isTeimosinha = !bet.targetContest || bet.targetContest === 'teimosinha';
 
@@ -1435,7 +1503,6 @@
       });
     }
 
-    /* NUMBER PICKER GRID LOGIC */
     function renderNumberPicker(lotteryKey) {
       const grid = document.getElementById('numberPickerGrid');
       if (!grid) return;
@@ -1540,7 +1607,6 @@
       if (mode === 'specific') {
         container.classList.remove('hidden');
         input.required = true;
-        // Pre-fill with current lottery contest if empty
         if (!input.value) {
           const currentContest = state.drawData[state.currentLottery]?.contest;
           if (currentContest && currentContest !== '---') {
@@ -1553,7 +1619,6 @@
       }
     }
 
-    /* GAME MANAGEMENT LOGIC */
     function openAddGameModal() {
       if (!state.isAdmin) return;
       document.getElementById('gameForm').reset();
@@ -1643,7 +1708,6 @@
       showToast('Jogo removido.', 'warning');
     }
 
-    // Modal Helpers
     function openModal(id) {
       if (id === 'importExportModal') {
         document.getElementById('jsonArea').value = JSON.stringify({
@@ -1652,7 +1716,6 @@
           balance: state.totalPoolBalance
         }, null, 2);
       }
-
       document.getElementById(id).classList.remove('hidden');
     }
 
@@ -1694,7 +1757,6 @@
       const toastIcon = document.getElementById('toastIcon');
 
       toastMessage.innerText = msg;
-
       if (type === 'warning') {
         toastIcon.className = 'fa-solid fa-circle-exclamation text-amber-400 text-lg';
       } else {
@@ -1702,7 +1764,6 @@
       }
 
       toast.classList.remove('translate-y-20', 'opacity-0');
-      
       setTimeout(() => {
         toast.classList.add('translate-y-20', 'opacity-0');
       }, 3000);
@@ -1714,6 +1775,42 @@
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
       });
     }
+
+    // Bind all functions to window for inline HTML handlers
+    window.switchLottery = switchLottery;
+    window.toggleManualDrawnMode = toggleManualDrawnMode;
+    window.saveManualDrawnNumbers = saveManualDrawnNumbers;
+    window.openEditBalanceModal = openEditBalanceModal;
+    window.saveCashBalance = saveCashBalance;
+    window.toggleAdminModal = toggleAdminModal;
+    window.loginAdmin = loginAdmin;
+    window.changeAdminPin = changeAdminPin;
+    window.logoutAdmin = logoutAdmin;
+    window.openPrizeModal = openPrizeModal;
+    window.saveEstimatedPrize = saveEstimatedPrize;
+    window.fetchLotteryResult = fetchLotteryResult;
+    window.openAddParticipantModal = openAddParticipantModal;
+    window.handleSaveParticipant = handleSaveParticipant;
+    window.editParticipant = editParticipant;
+    window.confirmDeleteParticipant = confirmDeleteParticipant;
+    window.executeParticipantDelete = executeParticipantDelete;
+    window.toggleLotteryCotaInput = toggleLotteryCotaInput;
+    window.openAddGameModal = openAddGameModal;
+    window.handleSaveGame = handleSaveGame;
+    window.editGame = editGame;
+    window.deleteGame = deleteGame;
+    window.onModalLotteryChange = onModalLotteryChange;
+    window.randomizePicker = randomizePicker;
+    window.clearPicker = clearPicker;
+    window.handleTextareaInput = handleTextareaInput;
+    window.toggleContestNumberInput = toggleContestNumberInput;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.copyJsonToClipboard = copyJsonToClipboard;
+    window.importJsonData = importJsonData;
+
+    // Start App & Initialize Cloud Connection
+    window.addEventListener('load', initCloudStorage);
   </script>
 </body>
 </html>
