@@ -631,6 +631,19 @@
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+    // =========================================================================
+    // CONFIGURAÇÃO DO FIREBASE
+    // Cole aqui os dados do seu projeto criado no Firebase Console
+    // =========================================================================
+    const userFirebaseConfig = {
+      apiKey: "AIzaSyD9HOAa3MrwhuZdulLVX9se5g6SXD0BLjM",
+      authDomain: "lotofacil-3f7d7.firebaseapp.com",
+      projectId: "lotofacil-3f7d7",
+      storageBucket: "lotofacil-3f7d7.firebasestorage.app",
+      messagingSenderId: "983848442891",
+      appId: "1:983848442891:web:lotofacil"
+    };
+
     // Configuration for Supported Lotteries
     const LOTTERIES = {
       lotofacil: {
@@ -734,10 +747,19 @@
       updateBalanceDisplay();
       switchLottery('lotofacil');
 
-      if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+      // Detect user config or fallback environment
+      let firebaseConfig = null;
+      if (userFirebaseConfig && userFirebaseConfig.apiKey && userFirebaseConfig.apiKey !== "COLE_SUA_API_KEY_AQUI") {
+        firebaseConfig = userFirebaseConfig;
+      } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
         try {
-          const firebaseConfig = JSON.parse(__firebase_config);
-          appId = typeof __app_id !== 'undefined' ? __app_id : 'bilhete-premiado-default';
+          firebaseConfig = JSON.parse(__firebase_config);
+        } catch(e) {}
+      }
+
+      if (firebaseConfig) {
+        try {
+          appId = firebaseConfig.projectId || (typeof __app_id !== 'undefined' ? __app_id : 'bilhete-premiado-default');
 
           const app = initializeApp(firebaseConfig);
           auth = getAuth(app);
@@ -753,7 +775,7 @@
           updateCloudStatusBadge(true);
 
           // Realtime Listener for Bolão State across all devices
-          const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'bolao', 'mainState');
+          const stateDocRef = doc(db, 'bolao_dados', 'mainState');
           
           onSnapshot(stateDocRef, (docSnap) => {
             if (docSnap.exists()) {
@@ -776,7 +798,7 @@
           });
 
         } catch (e) {
-          console.warn("Firebase not configured or failed to start:", e);
+          console.warn("Firebase não configurado ou erro ao iniciar:", e);
           updateCloudStatusBadge(false);
         }
       } else {
@@ -844,7 +866,7 @@
 
       if (isCloudConnected && db && auth?.currentUser) {
         try {
-          const stateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'bolao', 'mainState');
+          const stateDocRef = doc(db, 'bolao_dados', 'mainState');
           await setDoc(stateDocRef, {
             bets: state.bets,
             participants: state.participants,
